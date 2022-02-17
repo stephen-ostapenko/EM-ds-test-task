@@ -1,0 +1,1 @@
+rootProject.name = "EM-ds-test-task"
