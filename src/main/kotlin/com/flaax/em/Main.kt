@@ -1,5 +1,7 @@
 package com.flaax.em
 
+import kotlin.math.roundToInt
+
 fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Please specify the path to folder with R/W access")
@@ -25,7 +27,15 @@ fun main(args: Array<String>) {
             throw IllegalArgumentException("Number of tries must be positive")
         }
 
-        testReadWriteSpeed(args[0], testDataSizeInBytes, numberOfTries)
+        val results = testReadWriteSpeed(args[0], testDataSizeInBytes, numberOfTries)
+        results.forEach {
+            println("Test data with total size of " +
+                    "${(testDataSizeInBytes.toDouble() / 1024 / 1024).roundToInt()} MB " +
+                    "was split into ${it.numberOfFiles} file(s)")
+            println("Read speed is ${(it.readSpeed / 1024 / 1024).roundToInt()} MB/s " +
+                    "and write speed is ${(it.writeSpeed / 1024 / 1024).roundToInt()} MB/s")
+            println()
+        }
 
     } catch (e: NumberFormatException) {
         println("Test data size and number of tries must be positive integer")
