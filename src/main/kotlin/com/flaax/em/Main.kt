@@ -1,33 +1,46 @@
 package com.flaax.em
 
+import java.lang.Exception
+import java.nio.file.Files
+import kotlin.io.path.Path
 import kotlin.math.roundToInt
 
 fun main(args: Array<String>) {
     if (args.isEmpty()) {
-        println("Please specify the path to folder with R/W access")
+        println("Please specify the path to folder with Read/Write access")
         return
     }
 
     try {
+        val directory = args[0]
+        if (!Files.isDirectory(Path(directory))) {
+            throw IllegalArgumentException("Path '$directory' doesn't exist or is not a folder")
+        }
+        if (!Files.isReadable(Path(directory)) || !Files.isWritable(Path(directory))) {
+            throw IllegalArgumentException("'$directory' has to be readable and writable")
+        }
+
         val testDataSizeInBytes = if (args.size >= 2) {
-            args[1].toInt()
+            val sz = args[1].toInt()
+            if (sz <= 0 || sz > 1024) {
+                throw IllegalArgumentException("Test data size must be at least 1 MB and at most 1024 MB")
+            }
+            sz
         } else {
             128
         } * 1024 * 1024
-        if (testDataSizeInBytes < 1024) {
-            throw IllegalArgumentException("Test data size must be at least 1MB")
-        }
 
         val numberOfTries = if (args.size >= 3) {
-            args[2].toInt()
+            val num = args[2].toInt()
+            if (num <= 0) {
+                throw IllegalArgumentException("Number of tries must be positive")
+            }
+            num
         } else {
             5
         }
-        if (numberOfTries <= 0) {
-            throw IllegalArgumentException("Number of tries must be positive")
-        }
 
-        val results = testReadWriteSpeed(args[0], testDataSizeInBytes, numberOfTries)
+        val results = testReadWriteSpeed(directory, testDataSizeInBytes, numberOfTries)
         results.forEach {
             println("Test data with total size of " +
                     "${(testDataSizeInBytes.toDouble() / 1024 / 1024).roundToInt()} MB " +
@@ -38,9 +51,13 @@ fun main(args: Array<String>) {
         }
 
     } catch (e: NumberFormatException) {
+        println("Illegal argument!")
         println("Test data size and number of tries must be positive integer")
     } catch (e: IllegalArgumentException) {
         println("Illegal argument!")
         println(e.message)
+    } catch (e: Exception) {
+        println("Fatal error!!!")
+        println(e)
     }
 }
