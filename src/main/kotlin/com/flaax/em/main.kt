@@ -11,43 +11,48 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
-const val MAX_FILES_NUMBER = 1000
-const val MAX_FILE_SIZE_IN_BYTES = 1024 * 1024 * 1024
-val SIZES_OF_SMALL_FILES = arrayOf(3, 4).map { it * 1024 }
+val NUMBERS_OF_FILES = arrayOf(1, 2, 3, 4, 5, 10, 20, 50, 100)
 
 fun testWriteSpeed(files: List<File>, fileSize: Int, dataToWrite: ByteArray): Double {
-    val time = measureTimeMillis {
-        files.forEach { file ->
-            val outputStream = FileOutputStream(file)
-            val bufOutputStream = BufferedOutputStream(outputStream)
+    var time = 0L
+    files.forEach { file ->
+        val outputStream = FileOutputStream(file)
+        val bufOutputStream = BufferedOutputStream(outputStream)
 
+        val currentTime = measureTimeMillis {
             bufOutputStream.write(dataToWrite)
             bufOutputStream.flush()
             outputStream.channel.force(true)
-
-            bufOutputStream.close()
-            outputStream.close()
         }
+        time += currentTime
+
+        bufOutputStream.close()
+        outputStream.close()
     }
     return fileSize.toLong() * files.size.toLong() * 1000L / time.toDouble()
 }
 
 fun testReadSpeed(files: List<File>, fileSize: Int, dataToRead: ByteArray): Double {
-    val time = measureTimeMillis {
-        files.forEach { file ->
-            val inputStream = FileInputStream(file)
-            val bufInputStream = BufferedInputStream(inputStream)
+    var time = 0L
+    files.forEach { file ->
+        val inputStream = FileInputStream(file)
+        val bufInputStream = BufferedInputStream(inputStream)
 
+        val currentTime = measureTimeMillis {
             val data = bufInputStream.readNBytes(fileSize)
             if (!data.contentEquals(dataToRead)) {
                 throw RuntimeException("Read data doesn't equal to written data")
             }
         }
+        time += currentTime
+
+        bufInputStream.close()
+        inputStream.close()
     }
     return fileSize.toLong() * files.size.toLong() * 1000L / time.toDouble()
 }
 
-fun singleTestReadWriteSpeedOnSmallFiles(directory: String, fileSize: Int, numberOfFiles: Int): Pair<Double, Double> {
+fun singleTestReadWriteSpeed(directory: String, fileSize: Int, numberOfFiles: Int): Pair<Double, Double> {
     val files = (1..numberOfFiles).map { createTempFile(Path(directory), it.toString()).toFile() }
     val testData = Random.nextBytes(fileSize)
 
@@ -61,21 +66,22 @@ fun singleTestReadWriteSpeedOnSmallFiles(directory: String, fileSize: Int, numbe
     return Pair(readSpeed, writeSpeed)
 }
 
-fun testReadWriteSpeedOnSmallFiles(directory: String, testDataSizeInBytes: Int, numberOfTries: Int) {
-    for (fileSize in SIZES_OF_SMALL_FILES) {
-        val numberOfFiles = min(testDataSizeInBytes / fileSize, MAX_FILES_NUMBER)
-        if (numberOfFiles == 0) {
+fun testReadWriteSpeed(directory: String, testDataSizeInBytes: Int, numberOfTries: Int) {
+    for (numberOfFiles in NUMBERS_OF_FILES) {
+        val fileSize = testDataSizeInBytes / numberOfFiles
+        if (fileSize == 0) {
             continue
         }
-        repeat(numberOfTries) {
-            val result = singleTestReadWriteSpeedOnSmallFiles(directory, fileSize, numberOfFiles)
-            println("${result.first.roundToInt()} ${result.second.roundToInt()}")
-        }
+
+        val (readSpeedResults, writeSpeedResults) = (1..numberOfTries).map { singleTestReadWriteSpeed(directory, fileSize, numberOfFiles) }.unzip()
+        val readSpeed = readSpeedResults.average()
+        val writeSpeed = writeSpeedResults.average()
+        println("${readSpeed.roundToInt()} ${writeSpeed.roundToInt()}")
+        /*repeat(numberOfTries) {
+            val result = singleTestReadWriteSpeed(directory, fileSize, numberOfFiles)
+            //
+        }*/
     }
-}
-
-fun testRWSpeed(directory: String, testDataSizeInBytes: Int) {
-
 }
 
 fun main(args: Array<String>) {
@@ -103,7 +109,7 @@ fun main(args: Array<String>) {
             throw IllegalArgumentException("Number of tries must be positive")
         }
 
-        testReadWriteSpeedOnSmallFiles(args[0], testDataSizeInBytes, 1)
+        testReadWriteSpeed(args[0], testDataSizeInBytes, 5)
 
     } catch (e: NumberFormatException) {
         println("Test data size and number of tries must be positive integer")
