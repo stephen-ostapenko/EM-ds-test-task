@@ -15,7 +15,7 @@ val NUMBERS_OF_FILES = arrayOf(1, 2, 3, 4, 5, 10, 20, 50, 100)
 
 fun testWriteSpeed(files: List<File>, fileSize: Int, dataToWrite: ByteArray): Double {
     var time = 0L
-    files.forEach { file ->
+    files.shuffled(Random).forEach { file ->
         val outputStream = FileOutputStream(file)
         val bufOutputStream = BufferedOutputStream(outputStream)
 
@@ -34,7 +34,7 @@ fun testWriteSpeed(files: List<File>, fileSize: Int, dataToWrite: ByteArray): Do
 
 fun testReadSpeed(files: List<File>, fileSize: Int, dataToRead: ByteArray): Double {
     var time = 0L
-    files.forEach { file ->
+    files.shuffled(Random).forEach { file ->
         val inputStream = FileInputStream(file)
         val bufInputStream = BufferedInputStream(inputStream)
 
@@ -76,11 +76,10 @@ fun testReadWriteSpeed(directory: String, testDataSizeInBytes: Int, numberOfTrie
         val (readSpeedResults, writeSpeedResults) = (1..numberOfTries).map { singleTestReadWriteSpeed(directory, fileSize, numberOfFiles) }.unzip()
         val readSpeed = readSpeedResults.average()
         val writeSpeed = writeSpeedResults.average()
-        println("${readSpeed.roundToInt()} ${writeSpeed.roundToInt()}")
-        /*repeat(numberOfTries) {
-            val result = singleTestReadWriteSpeed(directory, fileSize, numberOfFiles)
-            //
-        }*/
+
+        println("Test data with total size of ${(testDataSizeInBytes.toDouble() / 1024 / 1024).roundToInt()} MB was split to $numberOfFiles file(s)")
+        println("Read speed is ${(readSpeed / 1024 / 1024).roundToInt()} MB/s and write speed is ${(writeSpeed / 1024 / 1024).roundToInt()} MB/s")
+        println()
     }
 }
 
@@ -94,7 +93,7 @@ fun main(args: Array<String>) {
         val testDataSizeInBytes = if (args.size >= 2) {
             args[1].toInt()
         } else {
-            512
+            128
         } * 1024 * 1024
         if (testDataSizeInBytes < 1024) {
             throw IllegalArgumentException("Test data size must be at least 1MB")
@@ -109,7 +108,7 @@ fun main(args: Array<String>) {
             throw IllegalArgumentException("Number of tries must be positive")
         }
 
-        testReadWriteSpeed(args[0], testDataSizeInBytes, 5)
+        testReadWriteSpeed(args[0], testDataSizeInBytes, numberOfTries)
 
     } catch (e: NumberFormatException) {
         println("Test data size and number of tries must be positive integer")
