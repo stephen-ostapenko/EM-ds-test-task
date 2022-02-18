@@ -25,9 +25,9 @@ fun main(args: Array<String>) {
             if (sz <= 0 || sz > 1024) {
                 throw IllegalArgumentException("Test data size must be at least 1 MB and at most 1024 MB")
             }
-            sz
+            sz // value from args
         } else {
-            128
+            128 // default value
         } * 1024 * 1024
 
         val numberOfTries = if (args.size >= 3) {
@@ -35,9 +35,9 @@ fun main(args: Array<String>) {
             if (num <= 0) {
                 throw IllegalArgumentException("Number of tries must be positive")
             }
-            num
+            num // value from args
         } else {
-            5
+            5 // default value
         }
 
         val results = testReadWriteSpeed(directory, testDataSizeInBytes, numberOfTries)

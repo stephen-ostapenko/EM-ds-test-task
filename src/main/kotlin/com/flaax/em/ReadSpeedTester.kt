@@ -6,14 +6,16 @@ import java.io.FileInputStream
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
-fun testReadSpeed(files: List<File>, fileSize: Int, dataToRead: ByteArray): Double {
+// function reads all data from each of temporary files
+// and measures time taken for reading
+fun testReadSpeed(files: List<File>, dataToRead: ByteArray): Double {
     var time = 0L
     files.shuffled(Random).forEach { file ->
         val inputStream = FileInputStream(file)
         val bufInputStream = BufferedInputStream(inputStream)
 
         val currentTime = measureTimeMillis {
-            val data = bufInputStream.readNBytes(fileSize)
+            val data = bufInputStream.readNBytes(dataToRead.size)
             if (!data.contentEquals(dataToRead)) {
                 throw RuntimeException("Read data doesn't equal to written data")
             }
@@ -23,5 +25,5 @@ fun testReadSpeed(files: List<File>, fileSize: Int, dataToRead: ByteArray): Doub
         bufInputStream.close()
         inputStream.close()
     }
-    return fileSize.toLong() * files.size.toLong() * 1000L / time.toDouble()
+    return dataToRead.size.toLong() * files.size.toLong() * 1000L / time.toDouble()
 }

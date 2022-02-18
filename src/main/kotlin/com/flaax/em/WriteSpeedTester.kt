@@ -6,7 +6,9 @@ import java.io.FileOutputStream
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
-fun testWriteSpeed(files: List<File>, fileSize: Int, dataToWrite: ByteArray): Double {
+// function writes randomly generated data into all temporary files from the list
+// and measures time taken for writing
+fun testWriteSpeed(files: List<File>, dataToWrite: ByteArray): Double {
     var time = 0L
     files.shuffled(Random).forEach { file ->
         val outputStream = FileOutputStream(file)
@@ -22,5 +24,5 @@ fun testWriteSpeed(files: List<File>, fileSize: Int, dataToWrite: ByteArray): Do
         bufOutputStream.close()
         outputStream.close()
     }
-    return fileSize.toLong() * files.size.toLong() * 1000L / time.toDouble()
+    return dataToWrite.size.toLong() * files.size.toLong() * 1000L / time.toDouble()
 }
